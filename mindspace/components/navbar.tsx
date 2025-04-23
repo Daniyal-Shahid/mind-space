@@ -129,7 +129,7 @@ export const Navbar = () => {
             <Button
               as={Link}
               className="text-sm font-medium bg-primary text-white"
-              href="/get-started"
+              href="/auth/signup"
               variant="flat"
             >
               Get Started

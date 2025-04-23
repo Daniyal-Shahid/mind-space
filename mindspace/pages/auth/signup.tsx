@@ -7,7 +7,7 @@ import FormInput from "@/components/auth/form-input";
 import SubmitButton from "@/components/auth/submit-button";
 import SuccessMessage from "@/components/auth/success-message";
 import ErrorMessage from "@/components/auth/error-message";
-import { signUp, isStrongPassword, isValidEmail } from "@/utils/auth";
+import { signUp, isStrongPassword, isValidEmail, isValidName } from "@/utils/auth";
 import { supabase } from "@/config/supabase";
 
 type FormData = {
@@ -53,12 +53,14 @@ const SignUp = () => {
 
     if (!formData.name.trim()) {
       newErrors.name = "Name is required";
+    } else if (!isValidName(formData.name)) {
+      newErrors.name = "Name must be between 2 and 20 characters, and contain only letters, spaces, and hyphens";
     }
 
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
     } else if (!isValidEmail(formData.email)) {
-      newErrors.email = "Email is invalid";
+      newErrors.email = "Email must be a valid email address";
     }
 
     if (!formData.password) {

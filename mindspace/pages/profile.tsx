@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { motion } from "framer-motion";
 import { Button } from "@heroui/button";
@@ -159,7 +159,7 @@ const Tabs = ({
 };
 
 const ProfilePage = () => {
-  const { profile, user, signOut } = useAuth();
+  const { profile, user, signOut, isLoading } = useAuth();
   const router = useRouter();
   const [selectedTab, setSelectedTab] = useState("profile");
 
@@ -375,7 +375,7 @@ const ProfilePage = () => {
           </div>
 
           <div className="w-full px-6 flex justify-end gap-2 p-4 border-t">
-            <Button color="danger" variant="light" onClick={handleSignOut}>
+            <Button color="danger" variant="light" onPress={handleSignOut}>
               Sign Out
             </Button>
           </div>

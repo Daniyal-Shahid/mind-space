@@ -1,12 +1,50 @@
 import { supabase } from "@/config/supabase";
 
 /**
+ * Name validation
+ * Requires minimum 2 characters, maximum 20 characters, and only letters, spaces, and hyphens
+ */
+export const isValidName = (name: string): boolean => {
+  // Check length requirements
+  if (name.length < 2 || name.length > 20) {
+    return false;
+  }
+
+  // Check for letters, spaces, and hyphens only
+  const nameRegex = /^[a-zA-Z\s-]+$/;
+  return nameRegex.test(name);
+};
+
+/**
  * Email validation using regex
  */
 export const isValidEmail = (email: string): boolean => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  
+  // List of trusted email providers
+  const trustedEmailProviders = [
+    "@gmail.com",
+    "@yahoo.com",
+    "@outlook.com",
+    "@hotmail.com",
+    "@icloud.com",
+    "@protonmail.com",
+    "@aol.com",
+    "@me.com",
+    "@live.com",
+    "@msn.com"
+  ];
 
-  return emailRegex.test(email);
+  // First check if the email matches the basic regex pattern
+  if (!emailRegex.test(email)) {
+    return false;
+  }
+
+  // Extract the domain part
+  const domain = "@" + email.split("@")[1].toLowerCase();
+  
+  // Check if the domain is in our trusted list
+  return trustedEmailProviders.includes(domain);
 };
 
 /**
