@@ -67,6 +67,7 @@ export default function CalendarPopup({ onSelectDate, currentDate, onClose }: Ca
   
   return (
     <motion.div 
+      key="calendar-backdrop"
       className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -74,6 +75,7 @@ export default function CalendarPopup({ onSelectDate, currentDate, onClose }: Ca
       onClick={onClose}
     >
       <motion.div 
+        key="calendar-content"
         className="bg-background rounded-xl shadow-lg p-6 max-w-md w-full"
         initial={{ scale: 0.9, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -122,7 +124,7 @@ export default function CalendarPopup({ onSelectDate, currentDate, onClose }: Ca
         
         {/* Months grid */}
         <div className="grid grid-cols-3 gap-4">
-          <AnimatePresence mode="wait">
+          <AnimatePresence>
             <motion.div 
               key={selectedYear}
               className="grid grid-cols-3 gap-4 w-full col-span-3"
@@ -139,7 +141,7 @@ export default function CalendarPopup({ onSelectDate, currentDate, onClose }: Ca
                 
                 return (
                   <motion.button
-                    key={month}
+                    key={`${month}-${index}`}
                     className={`
                       p-3 rounded-lg text-sm font-medium transition-colors
                       ${isCurrentSelection ? 'bg-primary text-white' : 'hover:bg-default-100'}

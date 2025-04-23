@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "@heroui/link";
 import { useRouter } from "next/router";
 
@@ -21,6 +21,8 @@ type FormErrors = {
 
 const Login = () => {
   const router = useRouter();
+  const { returnUrl } = router.query;
+  
   const [formData, setFormData] = useState<FormData>({
     email: "",
     password: "",
@@ -31,6 +33,14 @@ const Login = () => {
     "idle" | "success" | "error"
   >("idle");
   const [errorMessage, setErrorMessage] = useState<string>("");
+  const [redirectPath, setRedirectPath] = useState<string>("/");
+
+  // Set the redirect path based on the returnUrl query parameter
+  useEffect(() => {
+    if (returnUrl && typeof returnUrl === 'string') {
+      setRedirectPath(returnUrl);
+    }
+  }, [returnUrl]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -74,9 +84,9 @@ const Login = () => {
 
       if (user && session) {
         setSubmitStatus("success");
-        // Redirect to dashboard after a short delay
+        // Redirect to the appropriate page after a short delay
         setTimeout(() => {
-          router.push("/");
+          router.push(redirectPath);
         }, 1500);
       }
     } catch (error) {
@@ -99,9 +109,9 @@ const Login = () => {
     >
       {submitStatus === "success" ? (
         <SuccessMessage
-          buttonHref="/"
-          buttonText="Go to Dashboard"
-          message="You have successfully logged in! Redirecting to dashboard..."
+          buttonHref={redirectPath}
+          buttonText={redirectPath === "/profile" ? "Go to Profile" : "Go to Dashboard"}
+          message="You have successfully logged in! Redirecting..."
         />
       ) : (
         <form className="space-y-4" onSubmit={handleSubmit}>
