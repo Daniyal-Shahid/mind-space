@@ -50,7 +50,7 @@ export default function SleepEntry({
         {/* Hours slept */}
         <div>
           <div className="flex justify-between mb-2">
-            <label className="block text-default-700 text-sm font-medium">
+            <label htmlFor="hoursSlept" className="block text-default-700 text-sm font-medium">
               Hours Slept
             </label>
             <span className="text-default-600 text-sm font-medium">
@@ -58,6 +58,7 @@ export default function SleepEntry({
             </span>
           </div>
           <input
+            id="hoursSlept"
             className="w-full appearance-none bg-default-200 rounded-lg h-2"
             disabled={isDisabled}
             max="12"
@@ -77,7 +78,7 @@ export default function SleepEntry({
         {/* Sleep quality */}
         <div>
           <div className="flex justify-between mb-2">
-            <label className="block text-default-700 text-sm font-medium">
+            <label htmlFor="sleepQuality" className="block text-default-700 text-sm font-medium">
               Sleep Quality
             </label>
             <span className="text-default-600 text-sm font-medium">
@@ -85,6 +86,7 @@ export default function SleepEntry({
             </span>
           </div>
           <input
+            id="sleepQuality"
             className="w-full appearance-none bg-default-200 rounded-lg h-2"
             disabled={isDisabled}
             max="10"

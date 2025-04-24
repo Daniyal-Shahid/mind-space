@@ -150,7 +150,7 @@ const MealImpactChart: React.FC<MealImpactChartProps> = ({
                   <p className="text-sm text-default-600">
                     {bestMeal
                       ? `"${bestMeal.meal}" appears to correlate with your highest mood ratings. Consider including this in your meals more frequently!`
-                      : "We're still analysing your meal patterns. Keep logging to discover which foods boost your mood!"}
+                      : "We&apos;re still analysing your meal patterns. Keep logging to discover which foods boost your mood!"}
                   </p>
                 </div>
               </div>
