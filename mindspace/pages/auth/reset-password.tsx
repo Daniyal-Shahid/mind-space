@@ -82,7 +82,7 @@ const ResetPassword = () => {
 
   return (
     <AuthLayout
-      description="We'll send you a link to reset your password"
+      description="We&apos;ll send you a link to reset your password"
       status={submitStatus === "idle" ? "idle" : submitStatus}
       title="Reset password"
     >

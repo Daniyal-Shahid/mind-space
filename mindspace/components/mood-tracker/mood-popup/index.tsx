@@ -576,7 +576,7 @@ export default function MoodPopup({
                             <>
                               <span className="font-medium">{foodEntry.meals.split(",").length} meals</span> recorded
                               {foodEntry.feeling_after ? 
-                                <>: <span className="italic">"{foodEntry.feeling_after.substring(0, 35)}{foodEntry.feeling_after.length > 35 ? '...' : ''}"</span></> : 
+                                <>: <span className="italic">&quot;{foodEntry.feeling_after.substring(0, 35)}{foodEntry.feeling_after.length > 35 ? '...' : ''}&quot;</span></> : 
                                 ''}
                             </> : 
                             "No food data recorded yet"}

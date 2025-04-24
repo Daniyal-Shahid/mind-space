@@ -135,11 +135,11 @@ export default function Affirmations() {
       {/* Daily featured affirmation */}
       <section className="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-xl p-6 text-center">
         <h2 className="text-lg font-medium text-default-700 mb-3">
-          Today's Affirmation
+          Today&apos;s Affirmation
         </h2>
         <blockquote className="text-2xl md:text-3xl font-medium text-default-900 italic max-w-2xl mx-auto mb-6">
-          "I am exactly where I need to be on my journey, and I trust the
-          process of life."
+          &quot;I am exactly where I need to be on my journey, and I trust the
+          process of life.&quot;
         </blockquote>
         <Button className="mx-auto" color="primary" variant="flat">
           Set as Reminder

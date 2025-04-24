@@ -36,7 +36,7 @@ export default function Home() {
             </div>
             <div className="py-4">
               <blockquote className="text-xl md:text-2xl font-medium text-default-700 italic py-3">
-                "{dailyAffirmation.quote}"
+                &quot;{dailyAffirmation.quote}&quot;
               </blockquote>
               <div className="text-right text-default-500 mt-2">
                 — {dailyAffirmation.author}

@@ -33,10 +33,10 @@ export default function GratitudeEntry({
   const gratitudePrompts = [
     "Someone who helped me today...",
     "Something beautiful I noticed...",
-    "A skill or ability I'm thankful for...",
+    "A skill or ability I&apos;m thankful for...",
     "A small pleasure I enjoyed today...",
     "A challenge that helped me grow...",
-    "Something I'm looking forward to..."
+    "Something I&apos;m looking forward to..."
   ];
 
   // Randomly select a prompt
@@ -61,7 +61,7 @@ export default function GratitudeEntry({
         {/* Gratitude entry field */}
         <div>
           <div className="flex justify-between items-center mb-2">
-            <label className="block text-default-700 text-sm font-medium">
+            <label htmlFor="gratitudeItems" className="block text-default-700 text-sm font-medium">
               What are you grateful for today?
             </label>
             <motion.button
@@ -75,9 +75,10 @@ export default function GratitudeEntry({
             </motion.button>
           </div>
           <motion.textarea
+            id="gratitudeItems"
             className="w-full h-40 p-3 rounded-lg border border-default-300 bg-transparent focus:outline-none focus:ring-2 focus:ring-primary text-default-900 resize-none"
             disabled={isDisabled}
-            placeholder="Write down things you're grateful for..."
+            placeholder="Write down things you&apos;re grateful for..."
             transition={{ duration: 0.2 }}
             value={gratitudeItems}
             whileFocus={{
@@ -87,7 +88,7 @@ export default function GratitudeEntry({
             onChange={handleGratitudeChange}
           />
           <p className="text-xs text-default-500 mt-2">
-            Try to write at least three things you're grateful for. You can add more items using separate lines.
+            Try to write at least three things you&apos;re grateful for. You can add more items using separate lines.
           </p>
         </div>
         

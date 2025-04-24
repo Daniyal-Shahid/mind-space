@@ -569,11 +569,11 @@ export default function MoodTracker() {
       {/* Today's mood action card */}
       <div className="mb-8 p-5 bg-default-50 rounded-xl shadow-sm">
         <h2 className="text-xl font-semibold text-default-900 mb-2">
-          Today's Mood
+          Today&apos;s Mood
         </h2>
         <p className="text-default-600 mb-4">
           {hasTodaysMood
-            ? "You've recorded your mood for today. Would you like to update it?"
+            ? "You&apos;ve recorded your mood for today. Would you like to update it?"
             : "How are you feeling today? Record your mood to track your emotional wellbeing."}
         </p>
         <Button
@@ -581,7 +581,7 @@ export default function MoodTracker() {
           size="md"
           onClick={handleTodayMoodClick}
         >
-          {hasTodaysMood ? "Update Today's Entries" : "Add Today's Entries"}
+          {hasTodaysMood ? "Update Today&apos;s Entries" : "Add Today&apos;s Entries"}
         </Button>
       </div>
 

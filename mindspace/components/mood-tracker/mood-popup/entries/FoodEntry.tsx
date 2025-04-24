@@ -49,13 +49,17 @@ export default function FoodEntry({
       <div className="space-y-6">
         {/* Meals eaten */}
         <div>
-          <label className="block text-default-700 text-sm font-medium mb-2">
+          <label
+            htmlFor="meals-input"
+            className="block text-default-700 text-sm font-medium mb-2"
+          >
             What did you eat today?
           </label>
           <div className="text-xs text-default-500 mb-2">
-            List your meals separated by commas (e.g. "Oatmeal for breakfast, Salad for lunch")
+            List your meals separated by commas (e.g. &quot;Oatmeal for breakfast, Salad for lunch&quot;)
           </div>
           <motion.textarea
+            id="meals-input"
             className="w-full h-24 p-3 rounded-lg border border-default-300 bg-transparent focus:outline-none focus:ring-2 focus:ring-primary text-default-900 resize-none"
             disabled={isDisabled}
             placeholder="Breakfast, Lunch, Dinner, Snacks..."
@@ -71,7 +75,7 @@ export default function FoodEntry({
         
         {/* Feeling after eating */}
         <div>
-          <label className="block text-default-700 text-sm font-medium mb-2">
+          <label htmlFor="feeling-after-input" className="block text-default-700 text-sm font-medium mb-2">
             How did you feel after eating? (optional)
           </label>
           <motion.textarea

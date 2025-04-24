@@ -16,7 +16,7 @@ const sampleEntries: JournalEntry[] = [
     id: "1",
     title: "A Moment of Gratitude",
     content:
-      "Today I'm grateful for the small things: a warm cup of tea, a quiet moment, and the sunshine through my window.",
+      "Today I&apos;m grateful for the small things: a warm cup of tea, a quiet moment, and the sunshine through my window.",
     date: "2023-07-15",
     tags: ["gratitude", "reflection"],
   },
@@ -107,10 +107,14 @@ export default function Journal() {
                 />
               </div>
               <div>
-                <label className="block text-default-700 text-sm font-medium mb-1">
+                <label 
+                  htmlFor="journalContent" 
+                  className="block text-default-700 text-sm font-medium mb-1"
+                >
                   Content
                 </label>
                 <textarea
+                  id="journalContent"
                   className="w-full h-48 p-3 rounded-lg border border-default-300 bg-transparent focus:outline-none focus:ring-2 focus:ring-primary text-default-900"
                   placeholder="Write your thoughts here..."
                 />

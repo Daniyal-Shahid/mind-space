@@ -182,7 +182,7 @@ const MoodSleepChart: React.FC<MoodSleepChartProps> = ({
                   ? `Getting more sleep tends to improve your mood. Aim for ${optimalSleepHours} hours for best results!`
                   : correlation <= -0.3
                   ? `Interestingly, more sleep seems to correlate with lower mood. Your optimal balance appears to be around ${optimalSleepHours} hours.`
-                  : `There's no strong pattern between your sleep and mood yet. Keep logging to discover your optimal sleep duration!`}
+                  : `There&apos;s no strong pattern between your sleep and mood yet. Keep logging to discover your optimal sleep duration!`}
               </p>
             </div>
           </div>

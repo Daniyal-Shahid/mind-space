@@ -163,7 +163,7 @@ const Login = () => {
 
       <div className="mt-6 text-center">
         <p className="text-foreground-500">
-          Don't have an account?{" "}
+          Don&apos;t have an account?{" "}
           <Link className="text-primary font-medium" href="/auth/signup">
             Sign up
           </Link>

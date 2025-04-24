@@ -26,7 +26,7 @@ export default async function handler(
     // Do not return the actual values for security reasons
     // Just return the first few characters to help with debugging
     supabaseUrlPrefix: hasSupabaseUrl
-      ? `${process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 8)}...`
+      ? `${process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 2)}...`
       : null,
     timestamp: new Date().toISOString(),
   });
