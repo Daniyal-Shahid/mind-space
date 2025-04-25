@@ -1,0 +1,7 @@
+[build]
+  base = "mindspace"
+  publish = "mindspace/.next"
+  command = "npm run build"
+
+[[plugins]]
+  package = "@netlify/next"
