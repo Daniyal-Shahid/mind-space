@@ -176,7 +176,7 @@ export const updatePassword = async (newPassword: string): Promise<void> => {
 /**
  * Sign up a new user with Supabase
  */
-export const signUp = async (name: string, email: string, password: string) => {
+export const signUp = async (name: string, email: string, password: string, csrfToken?: string) => {
   // Sanitize inputs
   const sanitizedName = sanitizeInput(name);
   const sanitizedEmail = sanitizeInput(email);
@@ -208,6 +208,7 @@ export const signUp = async (name: string, email: string, password: string) => {
           name: sanitizedName,
           email: sanitizedEmail,
           password,
+          csrfToken
         }),
       });
 

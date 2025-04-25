@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "@heroui/link";
 import { useRouter } from "next/router";
 
@@ -14,6 +14,7 @@ type FormData = {
   name: string;
   email: string;
   password: string;
+  csrfToken?: string;
 };
 
 type FormErrors = {
@@ -35,6 +36,30 @@ const SignUp = () => {
     "idle" | "success" | "error"
   >("idle");
   const [errorMessage, setErrorMessage] = useState<string>("");
+  const [csrfToken, setCsrfToken] = useState<string | null>(null);
+  const [tokenError, setTokenError] = useState<boolean>(false);
+
+  // Fetch CSRF token when component mounts
+  useEffect(() => {
+    const fetchCsrfToken = async () => {
+      try {
+        const response = await fetch("/api/auth/csrf-token");
+        if (!response.ok) {
+          throw new Error("Failed to fetch security token");
+        }
+        
+        const data = await response.json();
+        setCsrfToken(data.csrfToken);
+        setFormData(prev => ({ ...prev, csrfToken: data.csrfToken }));
+        setTokenError(false);
+      } catch (error) {
+        console.error("Error fetching CSRF token:", error);
+        setTokenError(true);
+      }
+    };
+
+    fetchCsrfToken();
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -68,6 +93,12 @@ const SignUp = () => {
     } else if (!isStrongPassword(formData.password)) {
       newErrors.password =
         "Password must be at least 8 characters and include letters, numbers, and special characters";
+    }
+
+    // Validate CSRF token is present
+    if (!formData.csrfToken) {
+      setTokenError(true);
+      return false;
     }
 
     setErrors(newErrors);
@@ -108,8 +139,28 @@ const SignUp = () => {
       let result;
 
       try {
-        // First attempt: use our custom signup function
-        result = await signUp(formData.name, formData.email, formData.password);
+        // Include CSRF token in the custom signup request
+        const customSignupResponse = await fetch("/api/auth/signup", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: formData.name,
+            email: formData.email,
+            password: formData.password,
+            csrfToken: formData.csrfToken
+          }),
+        });
+
+        // Handle response
+        if (!customSignupResponse.ok) {
+          const errorData = await customSignupResponse.json();
+          throw new Error(errorData.error || "Signup failed");
+        }
+
+        const data = await customSignupResponse.json();
+        result = { user: data.user, session: null };
       } catch (signupError) {
         console.error("Main signup method failed:", signupError);
 
@@ -147,6 +198,24 @@ const SignUp = () => {
           setErrorMessage(
             "Server configuration issue. Please try again later or contact support.",
           );
+        } else if (error.message.includes("CSRF")) {
+          setErrorMessage(
+            "Security validation failed. Please refresh the page and try again.",
+          );
+          // Re-fetch the token
+          const fetchCsrfToken = async () => {
+            try {
+              const response = await fetch("/api/auth/csrf-token");
+              if (response.ok) {
+                const data = await response.json();
+                setCsrfToken(data.csrfToken);
+                setFormData(prev => ({ ...prev, csrfToken: data.csrfToken }));
+              }
+            } catch (e) {
+              console.error("Failed to refresh CSRF token:", e);
+            }
+          };
+          fetchCsrfToken();
         } else {
           setErrorMessage(error.message);
         }
@@ -172,6 +241,10 @@ const SignUp = () => {
         />
       ) : (
         <form className="space-y-4" onSubmit={handleSubmit}>
+          {tokenError && (
+            <ErrorMessage message="Could not obtain security token. Please refresh the page." />
+          )}
+          
           <FormInput
             error={errors.name}
             label="Name"
@@ -201,10 +274,14 @@ const SignUp = () => {
             onChange={handleChange}
           />
 
+          {/* Hidden CSRF token field */}
+          <input type="hidden" name="csrfToken" value={csrfToken || ""} />
+
           <SubmitButton
             isLoading={isSubmitting}
             loadingText="Creating Account..."
             text="Sign Up"
+            disabled={!csrfToken || tokenError}
           />
 
           {submitStatus === "error" && (

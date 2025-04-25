@@ -4,6 +4,12 @@
  */
 
 import crypto from 'crypto';
+import { serialize, parse } from 'cookie';
+import { NextApiRequest, NextApiResponse } from 'next';
+import jwt from 'jsonwebtoken';
+
+// Secret key for JWT tokens - this should ideally be in environment variables
+const JWT_SECRET = process.env.JWT_SECRET || 'mindspace-csrf-secret-key-change-in-production';
 
 /**
  * Generate a secure CSRF token
@@ -11,6 +17,36 @@ import crypto from 'crypto';
  */
 export function generateCSRFToken(): string {
   return crypto.randomBytes(32).toString('hex');
+}
+
+/**
+ * Generate a JWT-based CSRF token with expiration
+ * @returns A JWT token for CSRF protection
+ */
+export function generateJWTCSRFToken(): string {
+  return jwt.sign(
+    { 
+      data: crypto.randomBytes(16).toString('hex'),
+      type: 'csrf'
+    }, 
+    JWT_SECRET, 
+    { expiresIn: '1h' }
+  );
+}
+
+/**
+ * Verify a JWT CSRF token
+ * @param token The token to validate
+ * @returns Boolean indicating if the token is valid
+ */
+export function verifyJWTCSRFToken(token: string): boolean {
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    // Ensure it's a CSRF token
+    return typeof decoded === 'object' && decoded !== null && decoded.type === 'csrf';
+  } catch (error) {
+    return false;
+  }
 }
 
 /**
@@ -37,6 +73,58 @@ export function verifyCSRFToken(token: string, storedToken: string): boolean {
   }
   
   return result;
+}
+
+/**
+ * Set a secure cookie
+ */
+export function setCookie(
+  res: NextApiResponse,
+  name: string,
+  value: string,
+  options: Record<string, any> = {}
+) {
+  const cookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict' as const,
+    path: '/',
+    maxAge: 3600, // 1 hour in seconds
+    ...options,
+  };
+
+  res.setHeader('Set-Cookie', serialize(name, value, cookieOptions));
+}
+
+/**
+ * Parse cookies from request
+ */
+export function parseCookies(req: NextApiRequest): Record<string, string | undefined> {
+  // For API routes
+  if (req.cookies) {
+    return req.cookies;
+  }
+  
+  // For client-side requests with cookie header
+  const cookieHeader = req.headers.cookie || '';
+  return parse(cookieHeader);
+}
+
+/**
+ * Get a cookie value from request
+ */
+export function getCookie(req: NextApiRequest, name: string): string | undefined {
+  const cookies = parseCookies(req);
+  return cookies[name];
+}
+
+/**
+ * Set a CSRF token cookie and return the token
+ */
+export function setCSRFCookie(res: NextApiResponse): string {
+  const token = generateJWTCSRFToken();
+  setCookie(res, 'csrf_token', token);
+  return token;
 }
 
 /**
