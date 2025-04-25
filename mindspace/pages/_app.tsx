@@ -11,6 +11,8 @@ import { AuthProvider } from "@/contexts/auth-context";
 import { fontSans, fontMono } from "@/config/fonts";
 import MainLayout from "@/layouts/MainLayout";
 
+import { SpeedInsights } from "@vercel/speed-insights/next"
+
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
 
@@ -66,6 +68,7 @@ export default function App({ Component, pageProps }: AppProps) {
           </ThemeProvider>
         </HeroUIProvider>
       </AuthProvider>
+      <SpeedInsights />
     </>
   );
 }
