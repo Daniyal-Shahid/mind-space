@@ -3,6 +3,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient } from "@supabase/supabase-js";
 import { isValidName, isValidEmail, isStrongPassword, sanitizeInput } from "@/utils/auth";
 import { rateLimit } from "@/utils/rate-limit";
+import { getCookie, verifyJWTCSRFToken } from "@/utils/security";
 
 // Make sure environment variables are properly loaded and available
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -58,12 +59,30 @@ export default async function handler(
     // Apply rate limiting
     await signupLimiter.check(res, 5, ipStr);
     
-    // Note: CSRF validation has been removed as it was blocking legitimate signup requests
-    // For proper CSRF protection in production, implement a token-based solution with
-    // tokens generated during form render and validated here
+    // Validate CSRF token
+    const { name, email, password, csrfToken } = req.body;
     
-    const { name, email, password } = req.body;
+    // Get the token from the cookie
+    const storedCSRFToken = getCookie(req, 'csrf_token');
+    
+    // If no token in cookie or request, reject
+    if (!storedCSRFToken || !csrfToken) {
+      return res.status(403).json({
+        error: "CSRF token missing",
+        details: "Security validation failed. Please refresh and try again."
+      });
+    }
 
+    // Verify the token matches using JWT validation
+    const isValidToken = verifyJWTCSRFToken(storedCSRFToken) && csrfToken === storedCSRFToken;
+    
+    if (!isValidToken) {
+      return res.status(403).json({
+        error: "CSRF token invalid",
+        details: "Security validation failed. Please refresh and try again."
+      });
+    }
+    
     // Log sanitized signup attempt (no password)
     console.info(`Signup attempt: ${sanitizeInput(email)}`);
 
