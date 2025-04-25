@@ -569,7 +569,7 @@ export default function MoodTracker() {
       {/* Today's mood action card */}
       <div className="mb-8 p-5 bg-default-50 rounded-xl shadow-sm">
         <h2 className="text-xl font-semibold text-default-900 mb-2">
-          Todays Mood
+          Today's Mood
         </h2>
         <p className="text-default-600 mb-4">
           {hasTodaysMood
