@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev --turbo",
     "build": "next build",
+    "postbuild": "netlify build",
     "start": "next start",
     "lint": "eslint . --ext .ts,.tsx -c .eslintrc.json --fix"
   },
@@ -20,27 +21,29 @@
     "@heroui/switch": "2.2.15",
     "@heroui/system": "2.4.13",
     "@heroui/theme": "2.4.13",
+    "@netlify/next": "^1.4.9",
     "@react-aria/visually-hidden": "3.8.21",
     "@supabase/supabase-js": "^2.49.4",
+    "@types/cookie": "^0.6.0",
+    "@types/jsonwebtoken": "^9.0.9",
+    "bcryptjs": "^3.0.2",
     "chart.js": "^4.4.9",
     "clsx": "2.1.1",
+    "cookie": "^1.0.2",
     "framer-motion": "11.13.1",
     "intl-messageformat": "^10.5.0",
+    "jsonwebtoken": "^9.0.2",
+    "lru-cache": "^11.1.0",
+    "nanoid": "^5.1.5",
     "next": "15.0.4",
     "next-themes": "^0.4.4",
     "react": "18.3.1",
     "react-chartjs-2": "^5.3.0",
-    "react-dom": "18.3.1",
-    "@types/cookie": "^0.6.0",
-    "@types/jsonwebtoken": "^9.0.9",
-    "bcryptjs": "^3.0.2",
-    "cookie": "^1.0.2",
-    "jsonwebtoken": "^9.0.2",
-    "lru-cache": "^11.1.0",
-    "nanoid": "^5.1.5"
+    "react-dom": "18.3.1"
   },
   "devDependencies": {
     "@next/eslint-plugin-next": "^15.3.1",
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "20.5.7",
     "@types/react": "18.3.3",
     "@types/react-dom": "18.3.0",
@@ -60,7 +63,6 @@
     "prettier": "3.3.3",
     "tailwind-variants": "0.3.0",
     "tailwindcss": "3.4.16",
-    "typescript": "5.6.3",
-    "@types/bcryptjs": "^2.4.6"
+    "typescript": "5.6.3"
   }
 }
