@@ -14,9 +14,7 @@ import MoodPopup from "@/components/mood-tracker/mood-popup";
 import CalendarPopup from "@/components/mood-tracker/calendar-popup";
 import MoodStatistics from "@/components/stats/MoodStatistics";
 import Calendar from "@/components/mood-tracker/calendar";
-
-// Mood types
-type Mood = "great" | "good" | "neutral" | "bad" | "awful";
+import { Mood } from "@/types/mood";
 
 // Entry types with mood and note
 interface MoodEntry {
