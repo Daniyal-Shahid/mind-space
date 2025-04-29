@@ -16,6 +16,7 @@ type AuthContextType = {
   user: User | null;
   profile: UserProfile | null;
   isLoading: boolean;
+  error: Error | null;
   signOut: () => Promise<void>;
 };
 
@@ -26,38 +27,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   const router = useRouter();
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    let mounted = true;
 
-      if (session?.user) {
-        fetchUserProfile(session.user.id);
-      } else {
-        setIsLoading(false);
+    const initializeAuth = async () => {
+      try {
+        // Get initial session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) throw sessionError;
+
+        if (mounted) {
+          setSession(session);
+          setUser(session?.user ?? null);
+
+          if (session?.user) {
+            await fetchUserProfile(session.user.id);
+          }
+        }
+      } catch (error) {
+        console.error("Error initializing auth:", error);
+        if (mounted) {
+          setError(error instanceof Error ? error : new Error("Failed to initialize auth"));
+        }
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
-    });
+    };
+
+    initializeAuth();
 
     // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+      if (mounted) {
+        setSession(session);
+        setUser(session?.user ?? null);
 
-      if (session?.user) {
-        await fetchUserProfile(session.user.id);
-      } else {
-        setProfile(null);
+        if (session?.user) {
+          await fetchUserProfile(session.user.id);
+        } else {
+          setProfile(null);
+        }
       }
-
-      setIsLoading(false);
     });
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, []);
@@ -70,24 +92,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq("id", userId)
         .single();
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       setProfile(data);
+      setError(null);
     } catch (error) {
       console.error("Error fetching user profile:", error);
-    } finally {
-      setIsLoading(false);
+      setError(error instanceof Error ? error : new Error("Failed to fetch user profile"));
     }
   };
 
   const signOut = async () => {
     try {
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      setSession(null);
+      setUser(null);
+      setProfile(null);
       router.push("/auth/login");
     } catch (error) {
       console.error("Error signing out:", error);
+      setError(error instanceof Error ? error : new Error("Failed to sign out"));
     }
   };
 
@@ -96,6 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user,
     profile,
     isLoading,
+    error,
     signOut,
   };
 
