@@ -13,31 +13,36 @@ if (!supabaseUrl || !supabaseAnonKey) {
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
-    // Set auto-refresh token to true for better UX
     autoRefreshToken: true,
-    // Use secure cookies but ensure client-side access for auth persistence
+    detectSessionInUrl: true,
     storage: {
       getItem: (key) => {
         if (typeof window === "undefined") return null;
-        
-        // Get the value from localStorage for client-side auth persistence
-        return localStorage.getItem(key);
+        try {
+          return localStorage.getItem(key);
+        } catch (error) {
+          console.error("Error accessing localStorage:", error);
+          return null;
+        }
       },
       setItem: (key, value) => {
         if (typeof window === "undefined") return;
-        
-        // Store in localStorage for persistent sessions
-        localStorage.setItem(key, value);
+        try {
+          localStorage.setItem(key, value);
+        } catch (error) {
+          console.error("Error setting localStorage:", error);
+        }
       },
       removeItem: (key) => {
         if (typeof window === "undefined") return;
-        
-        // Remove from localStorage when signing out
-        localStorage.removeItem(key);
+        try {
+          localStorage.removeItem(key);
+        } catch (error) {
+          console.error("Error removing from localStorage:", error);
+        }
       },
     },
   },
-  // Add global error handler for monitoring
   global: {
     fetch: (...args) => {
       // Log requests for debugging in development

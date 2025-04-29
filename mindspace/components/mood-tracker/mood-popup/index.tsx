@@ -15,6 +15,10 @@ import FoodEntry from "./entries/FoodEntry";
 import WaterEntry from "./entries/WaterEntry";
 import GratitudeEntry from "./entries/GratitudeEntry";
 
+// This is the mood popup component. It is used to add a mood entry to the database.
+// It also allows you to add additional entries such as sleep, food, water, and gratitude. 
+// So when a user clicks on a day in the calendar, this component is used to add/update the mood entry and any additional entries.
+
 // Mood types
 type Mood = "great" | "good" | "neutral" | "bad" | "awful";
 
