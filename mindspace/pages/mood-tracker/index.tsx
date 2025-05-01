@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { Button } from "@heroui/button";
 import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from "next/router";
+import { useAuth } from "@/contexts/auth-context";
 
 import { fetchMoodEntries } from "@/utils/mood";
 import { 
@@ -105,6 +107,9 @@ const MoodTooltip = ({ mood, note }: { mood: Mood; note?: string }) => {
 
 export default function MoodTracker() {
   const today = new Date();
+  const router = useRouter();
+  const { session, isLoading: authLoading } = useAuth();
+  
   const [displayDate, setDisplayDate] = useState<Date>(today);
   const [showMoodPopup, setShowMoodPopup] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -138,8 +143,21 @@ export default function MoodTracker() {
   // Format today's date as YYYY-MM-DD for comparison
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 
+  // Check authentication and redirect if needed
+  useEffect(() => {
+    if (!authLoading && !session) {
+      router.replace({
+        pathname: '/auth/login',
+        query: { returnUrl: '/mood-tracker' },
+      });
+    }
+  }, [session, authLoading, router]);
+
   // Load mood entries from Supabase
   useEffect(() => {
+    // Only fetch if authenticated
+    if (authLoading || !session) return;
+    
     async function loadEntries() {
       try {
         setIsLoading(true);
@@ -166,72 +184,91 @@ export default function MoodTracker() {
 
         // Process mood entries
         const newMoodData: Record<string, MoodEntry> = {};
-        moodEntries.forEach((entry: MoodEntryType) => {
-          // Validate that the mood is one of our accepted types
-          if (["great", "good", "neutral", "bad", "awful"].includes(entry.mood)) {
-            newMoodData[entry.date] = {
-              id: entry.id, // Store the ID for update operations
-              mood: entry.mood as Mood,
-              note: entry.note || undefined,
-            };
-          }
-        });
+        if (Array.isArray(moodEntries)) {
+          moodEntries.forEach((entry: MoodEntryType) => {
+            // Validate that the mood is one of our accepted types
+            if (["great", "good", "neutral", "bad", "awful"].includes(entry.mood)) {
+              newMoodData[entry.date] = {
+                id: entry.id, // Store the ID for update operations
+                mood: entry.mood as Mood,
+                note: entry.note || undefined,
+              };
+            }
+          });
+        }
         setMoodData(newMoodData);
 
         // Process sleep entries
         const newSleepData: Record<string, SleepEntry> = {};
-        sleepEntries.forEach((entry: any) => {
-          newSleepData[entry.date] = {
-            id: entry.id,
-            hours_slept: entry.hours_slept,
-            sleep_quality: entry.sleep_quality
-          };
-        });
+        if (Array.isArray(sleepEntries)) {
+          sleepEntries.forEach((entry: any) => {
+            newSleepData[entry.date] = {
+              id: entry.id,
+              hours_slept: entry.hours_slept,
+              sleep_quality: entry.sleep_quality
+            };
+          });
+        }
         setSleepData(newSleepData);
         
         // Process food entries
         const newFoodData: Record<string, FoodEntry> = {};
-        foodEntries.forEach((entry: any) => {
-          newFoodData[entry.date] = {
-            id: entry.id,
-            meals: entry.meals,
-            feeling_after: entry.feeling_after
-          };
-        });
+        if (Array.isArray(foodEntries)) {
+          foodEntries.forEach((entry: any) => {
+            newFoodData[entry.date] = {
+              id: entry.id,
+              meals: entry.meals,
+              feeling_after: entry.feeling_after
+            };
+          });
+        }
         setFoodData(newFoodData);
         
         // Process water entries
         const newWaterData: Record<string, WaterEntry> = {};
-        waterEntries.forEach((entry: any) => {
-          newWaterData[entry.date] = {
-            id: entry.id,
-            cups: entry.cups
-          };
-        });
+        if (Array.isArray(waterEntries)) {
+          waterEntries.forEach((entry: any) => {
+            newWaterData[entry.date] = {
+              id: entry.id,
+              cups: entry.cups
+            };
+          });
+        }
         setWaterData(newWaterData);
         
         // Process gratitude entries
         const newGratitudeData: Record<string, GratitudeEntry> = {};
-        gratitudeEntries.forEach((entry: any) => {
-          newGratitudeData[entry.date] = {
-            id: entry.id,
-            gratitude_items: entry.gratitude_items
-          };
-        });
+        if (Array.isArray(gratitudeEntries)) {
+          gratitudeEntries.forEach((entry: any) => {
+            newGratitudeData[entry.date] = {
+              id: entry.id,
+              gratitude_items: entry.gratitude_items
+            };
+          });
+        }
         setGratitudeData(newGratitudeData);
         
       } catch (err) {
         console.error("Error loading entries:", err);
-        setError(
-          err instanceof Error ? err.message : "Failed to load entries",
-        );
+        
+        if (err instanceof Error && err.message.includes("must be logged in")) {
+          // Authentication error - redirect to login
+          router.push({
+            pathname: '/auth/login',
+            query: { returnUrl: '/mood-tracker' },
+          });
+        } else {
+          setError(
+            err instanceof Error ? err.message : "Failed to load entries",
+          );
+        }
       } finally {
         setIsLoading(false);
       }
     }
 
     loadEntries();
-  }, [displayDate]);
+  }, [displayDate, session, authLoading, router]);
 
   // Check for today's mood when the component mounts and when moodData changes
   useEffect(() => {
@@ -244,7 +281,7 @@ export default function MoodTracker() {
             endDate: todayStr,
           });
 
-          setHasTodaysMood(entries.length > 0);
+          setHasTodaysMood(Array.isArray(entries) && entries.length > 0);
         }
       } catch (err) {
         console.error("Error checking today's mood:", err);
@@ -538,6 +575,30 @@ export default function MoodTracker() {
     }),
   };
 
+  // If still loading auth, show loading spinner
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  // If not authenticated (and still in this component), show a message
+  if (!session) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen">
+        <p className="text-default-700 mb-4">Please log in to access your mood tracker</p>
+        <Button 
+          color="primary"
+          onPress={() => router.push('/auth/login?returnUrl=/mood-tracker')}
+        >
+          Log In
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="py-8 px-4 sm:px-8 max-w-5xl mx-auto">
       <h1 className="text-3xl font-bold text-default-900 mb-8">Mood Tracker</h1>
@@ -580,7 +641,7 @@ export default function MoodTracker() {
           size="md"
           onPress={handleTodayMoodClick}
         >
-          {hasTodaysMood ? "Update Todays Entries" : "Add Todays Entries"}
+          {hasTodaysMood ? "Update Today's Entries" : "Add Today's Entries"}
         </Button>
       </div>
 

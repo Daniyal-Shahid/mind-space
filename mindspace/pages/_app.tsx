@@ -2,7 +2,7 @@ import "../styles/globals.css";
 import type { AppProps } from "next/app";
 import { ThemeProvider } from "next-themes";
 import Head from "next/head";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import { HeroUIProvider } from "@heroui/system";
 import { useRouter } from "next/router";
@@ -10,18 +10,23 @@ import { useRouter } from "next/router";
 import { AuthProvider } from "@/contexts/auth-context";
 import { fontSans, fontMono } from "@/config/fonts";
 import MainLayout from "@/layouts/MainLayout";
+import { supabase } from "@/config/supabase";
 
 import { SpeedInsights } from "@vercel/speed-insights/next"
 
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
+  const [supabaseInitialized, setSupabaseInitialized] = useState(false);
 
-  // Security measures to protect against client-side attacks
+  // Client-side security
   useEffect(() => {
     // Prevent clickjacking attacks by breaking out of frames
     if (window.self !== window.top && window.top) {
       window.top.location.href = window.self.location.href;
     }
+
+    // Mark Supabase as initialized after component mounts
+    setSupabaseInitialized(true);
 
     // Disable browser autocomplete on sensitive forms as an extra precaution
     const sensitiveInputs = document.querySelectorAll('input[type="password"], input[name*="email"]');
@@ -59,15 +64,26 @@ export default function App({ Component, pageProps }: AppProps) {
         <meta httpEquiv="Permissions-Policy" content="interest-cohort=()" />
       </Head>
       
-      <AuthProvider>
-        <HeroUIProvider navigate={router.push}>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            <MainLayout>
-              <Component {...pageProps} />
-            </MainLayout>
-          </ThemeProvider>
-        </HeroUIProvider>
-      </AuthProvider>
+      {/* Only render the app after client-side initialization */}
+      {supabaseInitialized && (
+        <AuthProvider>
+          <HeroUIProvider navigate={router.push}>
+            <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+              <MainLayout>
+                <Component {...pageProps} />
+              </MainLayout>
+            </ThemeProvider>
+          </HeroUIProvider>
+        </AuthProvider>
+      )}
+      
+      {/* Show a loading indicator while initializing */}
+      {!supabaseInitialized && (
+        <div className="flex items-center justify-center h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        </div>
+      )}
+      
       <SpeedInsights />
     </>
   );

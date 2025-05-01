@@ -9,46 +9,35 @@ import { useAuth } from '@/contexts/auth-context';
 export default function UserProfilePage() {
   const router = useRouter();
   const { session, isLoading } = useAuth();
-  const [redirectTimeout, setRedirectTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [redirecting, setRedirecting] = useState(false);
 
   useEffect(() => {
-    // Set a maximum timeout to prevent infinite loading
-    const timeout = setTimeout(() => {
-      console.warn('Redirect timeout reached, forcing redirect to login');
-      router.replace({
-        pathname: '/auth/login',
-        query: { returnUrl: '/profile' },
-      });
-    }, 5000); // 5 second timeout
-    
-    setRedirectTimeout(timeout);
-
-    // If the user is logged in, redirect to the main profile page
+    // Only proceed if we're done loading auth state
     if (!isLoading) {
-      if (session) {
-        router.replace('/profile');
-      } else {
-        // If not authenticated, redirect to login page with return URL
-        router.replace({
-          pathname: '/auth/login',
-          query: { returnUrl: '/profile' },
-        });
+      // To prevent multiple redirects
+      if (!redirecting) {
+        setRedirecting(true);
+        
+        if (session) {
+          // If user is logged in, redirect to profile page
+          router.replace('/profile');
+        } else {
+          // If not authenticated, redirect to login page with return URL
+          router.replace({
+            pathname: '/auth/login',
+            query: { returnUrl: '/profile' },
+          });
+        }
       }
     }
+  }, [isLoading, session, router, redirecting]);
 
-    // Clean up timeout
-    return () => {
-      if (redirectTimeout) {
-        clearTimeout(redirectTimeout);
-      }
-    };
-  }, [isLoading, session, router, redirectTimeout]);
-
-  // Show a loading spinner while checking authentication and redirecting
   return (
     <div className="flex flex-col items-center justify-center h-screen">
       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mb-4" />
-      <p className="text-default-600">Redirecting...</p>
+      <p className="text-default-600">
+        {isLoading ? "Checking authentication..." : "Redirecting..."}
+      </p>
     </div>
   );
 } 

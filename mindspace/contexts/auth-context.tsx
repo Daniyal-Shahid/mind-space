@@ -30,9 +30,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<Error | null>(null);
   const router = useRouter();
 
+  // Setup authentication state
   useEffect(() => {
-    let mounted = true;
-    let timeoutId: NodeJS.Timeout;
+    // Set a timeout to prevent endless loading state
+    const timeoutId = setTimeout(() => {
+      if (isLoading) {
+        console.warn("Auth initialization timed out after 10 seconds");
+        setIsLoading(false);
+      }
+    }, 10000);
 
     const initializeAuth = async () => {
       try {
@@ -41,55 +47,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         if (sessionError) throw sessionError;
 
-        if (mounted) {
-          setSession(session);
-          setUser(session?.user ?? null);
-
-          if (session?.user) {
-            await fetchUserProfile(session.user.id);
-          }
-        }
-      } catch (error) {
-        console.error("Error initializing auth:", error);
-        if (mounted) {
-          setError(error instanceof Error ? error : new Error("Failed to initialize auth"));
-        }
-      } finally {
-        if (mounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    // Set a timeout to prevent infinite loading
-    timeoutId = setTimeout(() => {
-      if (mounted && isLoading) {
-        console.warn("Auth initialization timed out. Setting isLoading to false.");
-        setIsLoading(false);
-      }
-    }, 5000); // 5 second timeout
-
-    initializeAuth();
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (mounted) {
+        // Update state with session data
         setSession(session);
         setUser(session?.user ?? null);
 
+        // Fetch user profile if session exists
+        if (session?.user) {
+          await fetchUserProfile(session.user.id);
+        }
+      } catch (error) {
+        console.error("Error initializing auth:", error);
+        setError(error instanceof Error ? error : new Error("Failed to initialize auth"));
+      } finally {
+        // Always set loading to false when done
+        setIsLoading(false);
+        clearTimeout(timeoutId);
+      }
+    };
+
+    // Initialize auth immediately
+    initializeAuth();
+
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log(`Auth event: ${event}`);
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+
+        // Handle profile on auth changes
         if (session?.user) {
           await fetchUserProfile(session.user.id);
         } else {
           setProfile(null);
-          setIsLoading(false);
         }
       }
-    });
+    );
 
+    // Clean up
     return () => {
-      mounted = false;
       clearTimeout(timeoutId);
       subscription.unsubscribe();
     };
@@ -103,26 +100,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq("id", userId)
         .single();
 
-      if (error) {
-        // If the profile doesn't exist, don't treat as a critical error
-        if (error.code === 'PGRST116') {
-          console.warn(`User profile not found for ID: ${userId}. This is expected for new users.`);
-          setProfile(null);
-          setError(null);
-          return;
-        }
-        throw error;
-      }
+      if (error) throw error;
 
       setProfile(data);
       setError(null);
     } catch (error) {
       console.error("Error fetching user profile:", error);
-      // Don't set error as this could block the user experience
-      setProfile(null);
-    } finally {
-      // Always ensure loading ends after profile fetch attempt
-      setIsLoading(false);
+      // Don't set error state here to prevent blocking the auth flow
+      // Just log the error and continue
     }
   };
 

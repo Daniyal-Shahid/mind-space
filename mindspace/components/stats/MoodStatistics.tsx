@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@heroui/button";
+import { useRouter } from "next/router";
+import { useAuth } from "@/contexts/auth-context";
 import { 
   fetchSleepEntries, 
   fetchFoodEntries, 
@@ -21,6 +23,8 @@ import GratitudeImpactChart from "./GratitudeImpactChart";
 import MealImpactChart from "./MealImpactChart";
 
 const MoodStatistics: React.FC = () => {
+  const router = useRouter();
+  const { session, isLoading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -57,7 +61,20 @@ const MoodStatistics: React.FC = () => {
 
   const [timeRange, setTimeRange] = useState<"1m" | "3m" | "6m" | "1y">("3m");
   
+  // Check authentication
   useEffect(() => {
+    if (!authLoading && !session) {
+      router.replace({
+        pathname: '/auth/login',
+        query: { returnUrl: '/mood-tracker' },
+      });
+    }
+  }, [session, authLoading, router]);
+  
+  useEffect(() => {
+    // Only load data if authenticated
+    if (authLoading || !session) return;
+    
     async function loadAndAnalyzeData() {
       try {
         setIsLoading(true);
@@ -98,11 +115,11 @@ const MoodStatistics: React.FC = () => {
         
         // Combine entries by date for analysis
         const combinedEntries = combineDailyEntries(
-          moodEntries,
-          sleepEntries,
-          waterEntries,
-          foodEntries,
-          gratitudeEntries
+          Array.isArray(moodEntries) ? moodEntries : [],
+          Array.isArray(sleepEntries) ? sleepEntries : [],
+          Array.isArray(waterEntries) ? waterEntries : [],
+          Array.isArray(foodEntries) ? foodEntries : [],
+          Array.isArray(gratitudeEntries) ? gratitudeEntries : []
         );
         
         // Calculate statistics
@@ -119,16 +136,25 @@ const MoodStatistics: React.FC = () => {
         
       } catch (err) {
         console.error("Error analyzing mood data:", err);
-        setError(
-          err instanceof Error ? err.message : "Failed to analyze mood data"
-        );
+        
+        if (err instanceof Error && err.message.includes("must be logged in")) {
+          // Authentication error - redirect to login
+          router.push({
+            pathname: '/auth/login',
+            query: { returnUrl: '/mood-tracker' },
+          });
+        } else {
+          setError(
+            err instanceof Error ? err.message : "Failed to analyze mood data"
+          );
+        }
       } finally {
         setIsLoading(false);
       }
     }
     
     loadAndAnalyzeData();
-  }, [timeRange]);
+  }, [timeRange, session, authLoading, router]);
   
   // Generate summary badge/insights
   const getBadge = () => {
@@ -188,6 +214,30 @@ const MoodStatistics: React.FC = () => {
   };
   
   const badge = getBadge();
+  
+  // If still loading auth, show loading spinner
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // If not authenticated (and still in this component), show a message
+  if (!session) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <p className="text-default-700 mb-4">Please log in to view your wellbeing insights</p>
+        <Button 
+          color="primary"
+          onPress={() => router.push('/auth/login?returnUrl=/mood-tracker')}
+        >
+          Log In
+        </Button>
+      </div>
+    );
+  }
   
   return (
     <div className="pt-8 pb-12">

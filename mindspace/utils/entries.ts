@@ -59,16 +59,28 @@ const isValidDate = (date?: string): boolean => {
  * Check if the user is authenticated, throws an error if not
  */
 const checkAuthentication = async (): Promise<string> => {
-  const {
-    data: { session },
-    error: sessionError,
-  } = await supabase.auth.getSession();
+  try {
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession();
 
-  if (sessionError || !session) {
-    throw new Error("You must be logged in to access entries");
+    if (sessionError) {
+      console.error("Session error:", sessionError);
+      throw new Error("Authentication error. Please try logging in again.");
+    }
+
+    if (!session) {
+      throw new Error("You must be logged in to access entries");
+    }
+
+    return session.user.id;
+  } catch (error) {
+    console.error("Authentication check failed:", error);
+    throw error instanceof Error 
+      ? error 
+      : new Error("Failed to verify authentication");
   }
-
-  return session.user.id;
 };
 
 // ======== SLEEP ENTRIES ========
