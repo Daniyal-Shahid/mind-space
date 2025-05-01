@@ -8,11 +8,11 @@ import { useAuth } from '@/contexts/auth-context';
  */
 export default function UserProfilePage() {
   const router = useRouter();
-  const { session, isLoading } = useAuth();
+  const { session, isLoading, authInitialized } = useAuth();
 
   useEffect(() => {
-    // If the user is logged in, redirect to the main profile page
-    if (!isLoading) {
+    // Only redirect once auth is initialized to prevent premature redirects
+    if (authInitialized) {
       if (session) {
         router.replace('/profile');
       } else {
@@ -23,7 +23,7 @@ export default function UserProfilePage() {
         });
       }
     }
-  }, [isLoading, session, router]);
+  }, [authInitialized, session, router]);
 
   // Show a loading spinner while checking authentication and redirecting
   return (

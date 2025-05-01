@@ -8,12 +8,12 @@ type ProtectedRouteProps = {
 };
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { session, isLoading } = useAuth();
+  const { session, isLoading, authInitialized } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    // If the authentication has finished loading and there's no session, redirect to login
-    if (!isLoading && !session) {
+    // Only redirect once auth is fully initialized
+    if (authInitialized && !session) {
       // Get the current path to use as the return URL after login
       const currentPath = router.asPath;
       
@@ -27,10 +27,10 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
         query: { returnUrl },
       });
     }
-  }, [session, isLoading, router]);
+  }, [session, authInitialized, router]);
 
-  // Show loading state while checking authentication
-  if (isLoading) {
+  // Show loading state while waiting for authentication to initialize
+  if (!authInitialized || isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary" />

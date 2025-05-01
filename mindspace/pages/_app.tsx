@@ -2,22 +2,52 @@ import "../styles/globals.css";
 import type { AppProps } from "next/app";
 import { ThemeProvider } from "next-themes";
 import Head from "next/head";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import { HeroUIProvider } from "@heroui/system";
 import { useRouter } from "next/router";
 
-import { AuthProvider } from "@/contexts/auth-context";
+import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import { fontSans, fontMono } from "@/config/fonts";
 import MainLayout from "@/layouts/MainLayout";
 
 import { SpeedInsights } from "@vercel/speed-insights/next"
 
+// Modified AppContent component typing
+type AppContentProps = {
+  Component: AppProps['Component'];
+  pageProps: AppProps['pageProps'];
+};
+
+// Wrapper component that handles the loading state
+function AppContent({ Component, pageProps }: AppContentProps) {
+  const { isLoading, authInitialized } = useAuth();
+  const router = useRouter();
+  
+  // Skip loading screen for public paths like login
+  const isPublicPath = ['/auth/login', '/auth/signup', '/auth/reset-password'].includes(router.pathname);
+  
+  // Show loading state only when auth is still initializing and not on public paths
+  if (!authInitialized && !isPublicPath) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  return <Component {...pageProps} />;
+}
+
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
+  const [isMounted, setIsMounted] = useState(false);
 
-  // Security measures to protect against client-side attacks
+  // Wait for app to be mounted to avoid hydration issues
   useEffect(() => {
+    setIsMounted(true);
+    
+    // Security measures to protect against client-side attacks
     // Prevent clickjacking attacks by breaking out of frames
     if (window.self !== window.top && window.top) {
       window.top.location.href = window.self.location.href;
@@ -60,13 +90,19 @@ export default function App({ Component, pageProps }: AppProps) {
       </Head>
       
       <AuthProvider>
-        <HeroUIProvider navigate={router.push}>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            <MainLayout>
-              <Component {...pageProps} />
-            </MainLayout>
-          </ThemeProvider>
-        </HeroUIProvider>
+        {isMounted ? (
+          <HeroUIProvider navigate={router.push}>
+            <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+              <MainLayout>
+                <AppContent Component={Component} pageProps={pageProps} />
+              </MainLayout>
+            </ThemeProvider>
+          </HeroUIProvider>
+        ) : (
+          <div className="flex items-center justify-center h-screen">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary" />
+          </div>
+        )}
       </AuthProvider>
       <SpeedInsights />
     </>

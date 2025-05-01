@@ -16,6 +16,7 @@ type AuthContextType = {
   user: User | null;
   profile: UserProfile | null;
   isLoading: boolean;
+  authInitialized: boolean;
   error: Error | null;
   signOut: () => Promise<void>;
 };
@@ -27,6 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [authInitialized, setAuthInitialized] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const router = useRouter();
 
@@ -56,6 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } finally {
         if (mounted) {
           setIsLoading(false);
+          setAuthInitialized(true);
         }
       }
     };
@@ -74,6 +77,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           await fetchUserProfile(session.user.id);
         } else {
           setProfile(null);
+        }
+        
+        if (!authInitialized) {
+          setAuthInitialized(true);
+        }
+        
+        if (isLoading) {
+          setIsLoading(false);
         }
       }
     });
@@ -122,6 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user,
     profile,
     isLoading,
+    authInitialized,
     error,
     signOut,
   };
