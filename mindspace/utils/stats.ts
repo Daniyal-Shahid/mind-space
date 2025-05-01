@@ -38,62 +38,52 @@ export function combineDailyEntries(
   const entriesByDate: Record<string, CombinedEntry> = {};
 
   // Process mood entries
-  if (Array.isArray(moodEntries)) {
-    moodEntries.forEach((entry) => {
-      if (!entriesByDate[entry.date]) {
-        entriesByDate[entry.date] = { date: entry.date };
-      }
-      entriesByDate[entry.date].mood = entry.mood as Mood;
-      entriesByDate[entry.date].moodValue = moodValues[entry.mood as Mood];
-    });
-  }
+  moodEntries.forEach((entry) => {
+    if (!entriesByDate[entry.date]) {
+      entriesByDate[entry.date] = { date: entry.date };
+    }
+    entriesByDate[entry.date].mood = entry.mood as Mood;
+    entriesByDate[entry.date].moodValue = moodValues[entry.mood as Mood];
+  });
 
   // Process sleep entries
-  if (Array.isArray(sleepEntries)) {
-    sleepEntries.forEach((entry) => {
-      if (!entriesByDate[entry.date]) {
-        entriesByDate[entry.date] = { date: entry.date };
-      }
-      entriesByDate[entry.date].sleepHours = entry.hours_slept;
-      entriesByDate[entry.date].sleepQuality = entry.sleep_quality;
-    });
-  }
+  sleepEntries.forEach((entry) => {
+    if (!entriesByDate[entry.date]) {
+      entriesByDate[entry.date] = { date: entry.date };
+    }
+    entriesByDate[entry.date].sleepHours = entry.hours_slept;
+    entriesByDate[entry.date].sleepQuality = entry.sleep_quality;
+  });
 
   // Process water entries
-  if (Array.isArray(waterEntries)) {
-    waterEntries.forEach((entry) => {
-      if (!entriesByDate[entry.date]) {
-        entriesByDate[entry.date] = { date: entry.date };
-      }
-      entriesByDate[entry.date].waterCups = entry.cups;
-    });
-  }
+  waterEntries.forEach((entry) => {
+    if (!entriesByDate[entry.date]) {
+      entriesByDate[entry.date] = { date: entry.date };
+    }
+    entriesByDate[entry.date].waterCups = entry.cups;
+  });
 
   // Process food entries
-  if (Array.isArray(foodEntries)) {
-    foodEntries.forEach((entry) => {
-      if (!entriesByDate[entry.date]) {
-        entriesByDate[entry.date] = { date: entry.date };
-      }
-      // Calculate meal count by splitting the meals string
-      entriesByDate[entry.date].mealCount = entry.meals
-        ? entry.meals.split(",").length
-        : 0;
-    });
-  }
+  foodEntries.forEach((entry) => {
+    if (!entriesByDate[entry.date]) {
+      entriesByDate[entry.date] = { date: entry.date };
+    }
+    // Calculate meal count by splitting the meals string
+    entriesByDate[entry.date].mealCount = entry.meals
+      ? entry.meals.split(",").length
+      : 0;
+  });
 
   // Process gratitude entries
-  if (Array.isArray(gratitudeEntries)) {
-    gratitudeEntries.forEach((entry) => {
-      if (!entriesByDate[entry.date]) {
-        entriesByDate[entry.date] = { date: entry.date };
-      }
-      entriesByDate[entry.date].hasGratitude = true;
-      entriesByDate[entry.date].gratitudeItemCount = entry.gratitude_items
-        ? entry.gratitude_items.split("\n").filter((line: string) => line.trim()).length
-        : 0;
-    });
-  }
+  gratitudeEntries.forEach((entry) => {
+    if (!entriesByDate[entry.date]) {
+      entriesByDate[entry.date] = { date: entry.date };
+    }
+    entriesByDate[entry.date].hasGratitude = true;
+    entriesByDate[entry.date].gratitudeItemCount = entry.gratitude_items
+      ? entry.gratitude_items.split("\n").filter((line: string) => line.trim()).length
+      : 0;
+  });
 
   // Convert to array and sort by date
   return Object.values(entriesByDate).sort((a, b) => 

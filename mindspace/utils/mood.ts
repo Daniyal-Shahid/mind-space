@@ -1,4 +1,5 @@
 import { sanitizeInput } from "./auth";
+
 import { supabase } from "@/config/supabase";
 
 // Type for mood entry parameters
@@ -23,34 +24,6 @@ interface FetchMoodParams {
 }
 
 /**
- * Check if the user is authenticated, throws an error if not
- */
-const checkAuthentication = async (): Promise<string> => {
-  try {
-    const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
-
-    if (sessionError) {
-      console.error("Session error:", sessionError);
-      throw new Error("Authentication error. Please try logging in again.");
-    }
-
-    if (!session) {
-      throw new Error("You must be logged in to access mood entries");
-    }
-
-    return session.user.id;
-  } catch (error) {
-    console.error("Authentication check failed:", error);
-    throw error instanceof Error 
-      ? error 
-      : new Error("Failed to verify authentication");
-  }
-};
-
-/**
  * Insert a mood entry securely into Supabase
  *
  * @param params Object containing mood, optional note, and optional date
@@ -58,7 +31,16 @@ const checkAuthentication = async (): Promise<string> => {
  */
 export const insertMoodEntry = async (params: InsertMoodParams) => {
   // Check if user is authenticated
-  const userId = await checkAuthentication();
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  if (sessionError || !session) {
+    throw new Error("You must be logged in to record a mood");
+  }
+
+  const userId = session.user.id;
 
   // Validate and sanitize inputs
   if (
@@ -124,60 +106,6 @@ export const insertMoodEntry = async (params: InsertMoodParams) => {
 };
 
 /**
- * Update an existing mood entry
- * 
- * @param params Object containing entry ID, mood, and optional note
- * @returns The updated mood entry or throws an error
- */
-export const updateMoodEntry = async (params: UpdateMoodParams) => {
-  // Check if user is authenticated
-  await checkAuthentication();
-
-  // Validate entry ID
-  if (!params.id) {
-    throw new Error("Entry ID is required");
-  }
-
-  // Validate and sanitize inputs
-  if (
-    !params.mood ||
-    !["great", "good", "neutral", "bad", "awful"].includes(params.mood)
-  ) {
-    throw new Error("Invalid mood type");
-  }
-
-  // Sanitize note if provided
-  const sanitizedNote = params.note ? sanitizeInput(params.note) : undefined;
-
-  try {
-    // Update the mood entry
-    const { data, error } = await supabase
-      .from("MoodEntry")
-      .update({
-        mood: params.mood,
-        note: sanitizedNote,
-      })
-      .eq("id", params.id)
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Error updating mood entry:", error);
-      throw new Error(error.message || "Failed to update mood entry");
-    }
-
-    return data;
-  } catch (error) {
-    console.error("Error in updateMoodEntry:", error);
-    if (error instanceof Error) {
-      throw error;
-    } else {
-      throw new Error("An unexpected error occurred");
-    }
-  }
-};
-
-/**
  * Delete a mood entry
  *
  * @param entryId The UUID of the entry to delete
@@ -185,7 +113,14 @@ export const updateMoodEntry = async (params: UpdateMoodParams) => {
  */
 export const deleteMoodEntry = async (entryId: string) => {
   // Check if user is authenticated
-  await checkAuthentication();
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  if (sessionError || !session) {
+    throw new Error("You must be logged in to delete a mood entry");
+  }
 
   try {
     // Delete the entry (RLS will ensure the user can only delete their own entries)
@@ -219,7 +154,16 @@ export const deleteMoodEntry = async (entryId: string) => {
  */
 export const fetchMoodEntries = async (params?: FetchMoodParams) => {
   // Check if user is authenticated
-  const userId = await checkAuthentication();
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  if (sessionError || !session) {
+    throw new Error("You must be logged in to view mood entries");
+  }
+
+  const userId = session.user.id;
 
   try {
     // Start building the query
@@ -254,6 +198,67 @@ export const fetchMoodEntries = async (params?: FetchMoodParams) => {
     return data;
   } catch (error) {
     console.error("Error in fetchMoodEntries:", error);
+    // Re-throw with a user-friendly message
+    if (error instanceof Error) {
+      throw error;
+    } else {
+      throw new Error("An unexpected error occurred");
+    }
+  }
+};
+
+/**
+ * Update an existing mood entry
+ *
+ * @param params Object containing id, mood and optional note
+ * @returns The updated mood entry or throws an error
+ */
+export const updateMoodEntry = async (params: UpdateMoodParams) => {
+  // Check if user is authenticated
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  if (sessionError || !session) {
+    throw new Error("You must be logged in to update a mood entry");
+  }
+
+  // Validate inputs
+  if (!params.id) {
+    throw new Error("Entry ID is required");
+  }
+
+  if (
+    !params.mood ||
+    !["great", "good", "neutral", "bad", "awful"].includes(params.mood)
+  ) {
+    throw new Error("Invalid mood type");
+  }
+
+  // Sanitize note if provided to prevent XSS
+  const sanitizedNote = params.note ? sanitizeInput(params.note) : undefined;
+
+  try {
+    // Update the mood entry (RLS will ensure the user can only update their own entries)
+    const { data, error } = await supabase
+      .from("MoodEntry")
+      .update({
+        mood: params.mood,
+        note: sanitizedNote,
+      })
+      .eq("id", params.id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error updating mood entry:", error);
+      throw new Error(error.message || "Failed to update mood entry");
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Error in updateMoodEntry:", error);
     // Re-throw with a user-friendly message
     if (error instanceof Error) {
       throw error;

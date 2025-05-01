@@ -30,15 +30,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<Error | null>(null);
   const router = useRouter();
 
-  // Setup authentication state
   useEffect(() => {
-    // Set a timeout to prevent endless loading state
-    const timeoutId = setTimeout(() => {
-      if (isLoading) {
-        console.warn("Auth initialization timed out after 10 seconds");
-        setIsLoading(false);
-      }
-    }, 10000);
+    let mounted = true;
 
     const initializeAuth = async () => {
       try {
@@ -47,47 +40,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         if (sessionError) throw sessionError;
 
-        // Update state with session data
-        setSession(session);
-        setUser(session?.user ?? null);
+        if (mounted) {
+          setSession(session);
+          setUser(session?.user ?? null);
 
-        // Fetch user profile if session exists
-        if (session?.user) {
-          await fetchUserProfile(session.user.id);
+          if (session?.user) {
+            await fetchUserProfile(session.user.id);
+          }
         }
       } catch (error) {
         console.error("Error initializing auth:", error);
-        setError(error instanceof Error ? error : new Error("Failed to initialize auth"));
+        if (mounted) {
+          setError(error instanceof Error ? error : new Error("Failed to initialize auth"));
+        }
       } finally {
-        // Always set loading to false when done
-        setIsLoading(false);
-        clearTimeout(timeoutId);
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     };
 
-    // Initialize auth immediately
     initializeAuth();
 
-    // Set up auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log(`Auth event: ${event}`);
-        
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (mounted) {
         setSession(session);
         setUser(session?.user ?? null);
 
-        // Handle profile on auth changes
         if (session?.user) {
           await fetchUserProfile(session.user.id);
         } else {
           setProfile(null);
         }
       }
-    );
+    });
 
-    // Clean up
     return () => {
-      clearTimeout(timeoutId);
+      mounted = false;
       subscription.unsubscribe();
     };
   }, []);
@@ -106,14 +98,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError(null);
     } catch (error) {
       console.error("Error fetching user profile:", error);
-      // Don't set error state here to prevent blocking the auth flow
-      // Just log the error and continue
+      setError(error instanceof Error ? error : new Error("Failed to fetch user profile"));
     }
   };
 
   const signOut = async () => {
     try {
-      setIsLoading(true);
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
@@ -124,8 +114,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error("Error signing out:", error);
       setError(error instanceof Error ? error : new Error("Failed to sign out"));
-    } finally {
-      setIsLoading(false);
     }
   };
 
