@@ -16,7 +16,6 @@ type AuthContextType = {
   user: User | null;
   profile: UserProfile | null;
   isLoading: boolean;
-  authInitialized: boolean;
   error: Error | null;
   signOut: () => Promise<void>;
 };
@@ -28,12 +27,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [authInitialized, setAuthInitialized] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const router = useRouter();
 
   useEffect(() => {
     let mounted = true;
+    let timeoutId: NodeJS.Timeout;
 
     const initializeAuth = async () => {
       try {
@@ -58,10 +57,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } finally {
         if (mounted) {
           setIsLoading(false);
-          setAuthInitialized(true);
         }
       }
     };
+
+    // Set a timeout to prevent infinite loading
+    timeoutId = setTimeout(() => {
+      if (mounted && isLoading) {
+        console.warn("Auth initialization timed out. Setting isLoading to false.");
+        setIsLoading(false);
+      }
+    }, 5000); // 5 second timeout
 
     initializeAuth();
 
@@ -77,13 +83,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           await fetchUserProfile(session.user.id);
         } else {
           setProfile(null);
-        }
-        
-        if (!authInitialized) {
-          setAuthInitialized(true);
-        }
-        
-        if (isLoading) {
           setIsLoading(false);
         }
       }
@@ -91,6 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       mounted = false;
+      clearTimeout(timeoutId);
       subscription.unsubscribe();
     };
   }, []);
@@ -103,18 +103,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq("id", userId)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // If the profile doesn't exist, don't treat as a critical error
+        if (error.code === 'PGRST116') {
+          console.warn(`User profile not found for ID: ${userId}. This is expected for new users.`);
+          setProfile(null);
+          setError(null);
+          return;
+        }
+        throw error;
+      }
 
       setProfile(data);
       setError(null);
     } catch (error) {
       console.error("Error fetching user profile:", error);
-      setError(error instanceof Error ? error : new Error("Failed to fetch user profile"));
+      // Don't set error as this could block the user experience
+      setProfile(null);
+    } finally {
+      // Always ensure loading ends after profile fetch attempt
+      setIsLoading(false);
     }
   };
 
   const signOut = async () => {
     try {
+      setIsLoading(true);
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
@@ -125,6 +139,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error("Error signing out:", error);
       setError(error instanceof Error ? error : new Error("Failed to sign out"));
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -133,7 +149,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user,
     profile,
     isLoading,
-    authInitialized,
     error,
     signOut,
   };

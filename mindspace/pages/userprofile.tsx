@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/contexts/auth-context';
 
@@ -8,11 +8,23 @@ import { useAuth } from '@/contexts/auth-context';
  */
 export default function UserProfilePage() {
   const router = useRouter();
-  const { session, isLoading, authInitialized } = useAuth();
+  const { session, isLoading } = useAuth();
+  const [redirectTimeout, setRedirectTimeout] = useState<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // Only redirect once auth is initialized to prevent premature redirects
-    if (authInitialized) {
+    // Set a maximum timeout to prevent infinite loading
+    const timeout = setTimeout(() => {
+      console.warn('Redirect timeout reached, forcing redirect to login');
+      router.replace({
+        pathname: '/auth/login',
+        query: { returnUrl: '/profile' },
+      });
+    }, 5000); // 5 second timeout
+    
+    setRedirectTimeout(timeout);
+
+    // If the user is logged in, redirect to the main profile page
+    if (!isLoading) {
       if (session) {
         router.replace('/profile');
       } else {
@@ -23,12 +35,20 @@ export default function UserProfilePage() {
         });
       }
     }
-  }, [authInitialized, session, router]);
+
+    // Clean up timeout
+    return () => {
+      if (redirectTimeout) {
+        clearTimeout(redirectTimeout);
+      }
+    };
+  }, [isLoading, session, router, redirectTimeout]);
 
   // Show a loading spinner while checking authentication and redirecting
   return (
-    <div className="flex items-center justify-center h-screen">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary" />
+    <div className="flex flex-col items-center justify-center h-screen">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mb-4" />
+      <p className="text-default-600">Redirecting...</p>
     </div>
   );
 } 

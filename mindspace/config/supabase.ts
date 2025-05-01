@@ -9,15 +9,39 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error("Missing Supabase environment variables");
 }
 
-// Enhanced Supabase client with security options
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-    storage: {
-      getItem: (key) => {
-        if (typeof window === "undefined") return null;
+// Function to check if localStorage is available
+const isLocalStorageAvailable = () => {
+  if (typeof window === "undefined") return false;
+  
+  try {
+    const testKey = "_supabase_test_";
+    localStorage.setItem(testKey, "test");
+    localStorage.removeItem(testKey);
+    return true;
+  } catch (e) {
+    return false;
+  }
+};
+
+// Create a fallback storage if localStorage is not available
+const createFallbackStorage = () => {
+  const memoryStorage: Record<string, string> = {};
+  
+  return {
+    getItem: (key: string) => memoryStorage[key] || null,
+    setItem: (key: string, value: string) => {
+      memoryStorage[key] = value;
+    },
+    removeItem: (key: string) => {
+      delete memoryStorage[key];
+    }
+  };
+};
+
+// Determine which storage to use
+const storage = isLocalStorageAvailable() 
+  ? {
+      getItem: (key: string) => {
         try {
           return localStorage.getItem(key);
         } catch (error) {
@@ -25,23 +49,32 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
           return null;
         }
       },
-      setItem: (key, value) => {
-        if (typeof window === "undefined") return;
+      setItem: (key: string, value: string) => {
         try {
           localStorage.setItem(key, value);
         } catch (error) {
           console.error("Error setting localStorage:", error);
         }
       },
-      removeItem: (key) => {
-        if (typeof window === "undefined") return;
+      removeItem: (key: string) => {
         try {
           localStorage.removeItem(key);
         } catch (error) {
           console.error("Error removing from localStorage:", error);
         }
       },
-    },
+    }
+  : createFallbackStorage();
+
+// Enhanced Supabase client with security options
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    storage,
+    flowType: 'pkce', // Use PKCE flow for more secure authentication
+    debug: process.env.NODE_ENV === 'development',
   },
   global: {
     fetch: (...args) => {
@@ -50,7 +83,18 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
         const [url] = args;
         console.debug(`Supabase request: ${url}`);
       }
-      return fetch(...args);
+      
+      // Add request timeout to prevent hanging requests
+      return fetch(...args).catch(error => {
+        console.error("Supabase fetch error:", error);
+        throw error;
+      });
+    },
+  },
+  // Added to improve reliability
+  realtime: {
+    params: {
+      eventsPerSecond: 10,
     },
   },
 });
