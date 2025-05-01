@@ -15,6 +15,7 @@ import CalendarPopup from "@/components/mood-tracker/calendar-popup";
 import MoodStatistics from "@/components/stats/MoodStatistics";
 import Calendar from "@/components/mood-tracker/calendar";
 import { Mood } from "@/types/mood";
+import { withAuth } from '@/components/auth/withAuth';
 
 // Entry types with mood and note
 interface MoodEntry {
@@ -103,7 +104,7 @@ const MoodTooltip = ({ mood, note }: { mood: Mood; note?: string }) => {
   );
 };
 
-export default function MoodTracker() {
+function MoodTrackerPage() {
   const today = new Date();
   const [displayDate, setDisplayDate] = useState<Date>(today);
   const [showMoodPopup, setShowMoodPopup] = useState(false);
@@ -637,3 +638,5 @@ export default function MoodTracker() {
     </div>
   );
 }
+
+export default withAuth(MoodTrackerPage);

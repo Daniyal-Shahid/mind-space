@@ -2,16 +2,34 @@ import "../styles/globals.css";
 import type { AppProps } from "next/app";
 import { ThemeProvider } from "next-themes";
 import Head from "next/head";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import { HeroUIProvider } from "@heroui/system";
 import { useRouter } from "next/router";
 
-import { AuthProvider } from "@/contexts/auth-context";
+import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import { fontSans, fontMono } from "@/config/fonts";
 import MainLayout from "@/layouts/MainLayout";
 
 import { SpeedInsights } from "@vercel/speed-insights/next"
+
+// Loading component
+const LoadingScreen = () => (
+  <div className="flex justify-center items-center h-screen">
+    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary" />
+  </div>
+);
+
+// Wrapper component to handle auth loading state
+const AuthWrapper = ({ children }: { children: React.ReactNode }) => {
+  const { isLoading } = useAuth();
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
+  return <>{children}</>;
+};
 
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
@@ -60,13 +78,15 @@ export default function App({ Component, pageProps }: AppProps) {
       </Head>
       
       <AuthProvider>
-        <HeroUIProvider navigate={router.push}>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            <MainLayout>
-              <Component {...pageProps} />
-            </MainLayout>
-          </ThemeProvider>
-        </HeroUIProvider>
+        <AuthWrapper>
+          <HeroUIProvider navigate={router.push}>
+            <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+              <MainLayout>
+                <Component {...pageProps} />
+              </MainLayout>
+            </ThemeProvider>
+          </HeroUIProvider>
+        </AuthWrapper>
       </AuthProvider>
       <SpeedInsights />
     </>
